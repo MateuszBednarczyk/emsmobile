@@ -6,20 +6,21 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
 
 import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
     public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
-    OkHttpClient httpClient = new OkHttpClient();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,17 +42,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sendTestRequest(View view) throws IOException {
+        Retrofit retrofit = new Retrofit.Builder().baseUrl("http://192.168.254.153:8080/api/")
+                .addConverterFactory(GsonConverterFactory.create()).build();
+        RetrofitService retrofitService = retrofit.create(RetrofitService.class);
         EditText usernameInput = (EditText) findViewById(R.id.editUsername);
         EditText passwordInput = (EditText) findViewById(R.id.editPassword);
         String username = String.valueOf(usernameInput.getText());
         String password = String.valueOf(passwordInput.getText());
-        String json = "{'username':'" + username + "'," + "'password:'" + password + "}";
-        RequestBody requestBody = RequestBody.create(json, JSON);
-        Request request = new Request.Builder().url("http://{ip}:8080/api/users/login").post(requestBody).build();
-        try (Response response = httpClient.newCall(request).execute()) {
-            TextView textView = (TextView) findViewById(R.id.resultView);
-            textView.setText("logged in");
-            System.out.println(response.body().string());
-        }
+        TextView textView = (TextView) findViewById(R.id.resultView);
+        retrofitService.login(new UserCredentials(username, password)).enqueue(new Callback<UserCredentials>() {
+            @Override
+            public void onResponse(Call<UserCredentials> call, Response<UserCredentials> response) {
+                if (response.code() == 200) {
+                    Toast.makeText(MainActivity.this, "logged in", Toast.LENGTH_SHORT).show();
+                    textView.setText("logged in");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<UserCredentials> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "login failed", Toast.LENGTH_SHORT).show();
+                textView.setText("login failed");
+            }
+        });
     }
 }
