@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
 
-import okhttp3.MediaType;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -20,8 +19,6 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
-    public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
@@ -50,12 +47,14 @@ public class MainActivity extends AppCompatActivity {
         String username = String.valueOf(usernameInput.getText());
         String password = String.valueOf(passwordInput.getText());
         TextView textView = (TextView) findViewById(R.id.resultView);
-        retrofitService.login(new UserCredentials(username, password)).enqueue(new Callback<UserCredentials>() {
+        retrofitService.login(new UserCredentials(username, password), "application/json").enqueue(new Callback<UserCredentials>() {
             @Override
             public void onResponse(Call<UserCredentials> call, Response<UserCredentials> response) {
                 if (response.code() == 200) {
                     Toast.makeText(MainActivity.this, "logged in", Toast.LENGTH_SHORT).show();
                     textView.setText("logged in");
+                } else {
+                    Toast.makeText(MainActivity.this, "can't log in", Toast.LENGTH_SHORT).show();
                 }
             }
 
